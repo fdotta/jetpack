@@ -7,7 +7,6 @@
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
 
-\\
 
 // jetpack setup
 #define PIN 6          // NeoPixel strip data pin
