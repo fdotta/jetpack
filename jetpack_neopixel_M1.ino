@@ -3,61 +3,97 @@
 // GNU General Public Licence v3
 //=================================================
 #include <Adafruit_NeoPixel.h>
-#define PIN 6 //NeoPixel strip data pin
-#define NUM_LEDS 48 
-#define DLOOP 20 // delay per loop in ms
-#define TFULL 8 // tolal time to full power in seconds  
-#define TCRUIZE 15 // total time in cruise in seconds
-#define TFULLZ  3 // total time full 2 zero in seconds
+#include "Arduino.h"
+#include "SoftwareSerial.h"
+#include "DFRobotDFPlayerMini.h"
 
-#define BRIGHTNESS 255
+\\
+
+// jetpack setup
+#define PIN 6          // NeoPixel strip data pin
+#define RPIN 5         // Reley pin
+#define NUM_LEDS 48    // neopixel num leds
+#define DLOOP 40       // delay per loop in ms
+#define TFULL 25       // tolal time to full power in seconds  
+#define TCRUIZE 21     // total time in cruise in seconds
+#define TFULLZ  17     // total time full 2 zero in seconds
+#define TSMOKE  20     // total time in seconds smoke on
+#define TRSMOKE 2      // ratio smoke on/off  
+#define ROUNDS 5       // num of led ronds on start up
+#define BRIGHTNESS 255 // led brightness (0 off, 255 max)
+
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 //Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_GRBW + NEO_KHZ800);
 
+SoftwareSerial mySoftwareSerial(10, 11); // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
 
 int nloops_tf = floor(TFULL * 1000 / DLOOP);
 int nloops_tc = floor(TCRUIZE * 1000 / DLOOP);
 int nloops_tz = floor(TFULLZ * 1000 / DLOOP);
+int ron       = floor(TSMOKE * 1000 / DLOOP);
+int roff      = floor(ron/(TRSMOKE + 1));
 
 bool debug = false;
 
-int i, counter; 
+int i, counter, rcounter; 
 
 //----------------------------------------------------------
 
 void setup() {
   i = 0;
-  counter = 0; 
-  if (debug) { // serial com for debugging
-    Serial.begin(9600); // for debug
-    Serial.print("DLOOP   = ");
-    Serial.print(DLOOP);
-    Serial.print(" ms\n");
-    Serial.print("TFULL   = ");
-    Serial.print(TFULL);
-    Serial.print(" s\n");
-    Serial.print("TCRUIZE = ");
-    Serial.print(TCRUIZE);
-    Serial.print(" s\n");
-    Serial.print("TFULLZ  = ");
-    Serial.print(TFULLZ);
-    Serial.print(" s\n");
+  counter  = 0; 
+  rcounter = 0;
   
-    Serial.print("nloops  = [");
-    Serial.print(nloops_tf); 
-    Serial.print(" ");
-    Serial.print(nloops_tc);
-    Serial.print(" ");
-    Serial.print(nloops_tz);
-    Serial.print("]\n");
-
-  }  
+  mySoftwareSerial.begin(9600);
   pinMode(PIN, OUTPUT);
+  pinMode(RPIN, OUTPUT);
+  
+  Serial.begin(9600);
+  Serial.print("DLOOP   = ");
+  Serial.print(DLOOP);
+  Serial.print(" ms\n");
+  Serial.print("TFULL   = ");
+  Serial.print(TFULL);
+  Serial.print(" s\n");
+  Serial.print("TCRUIZE = ");
+  Serial.print(TCRUIZE);
+  Serial.print(" s\n");
+  Serial.print("TFULLZ  = ");
+  Serial.print(TFULLZ);
+  Serial.print(" s\n");
+  
+  Serial.print("nloops  = [");
+  Serial.print(nloops_tf); 
+  Serial.print(" ");
+  Serial.print(nloops_tc);
+  Serial.print(" ");
+  Serial.print(nloops_tz);
+  Serial.print("]\n");
 
+// init dfplayer mini
+  Serial.println();
+  Serial.println(F("DFRobot DFPlayer Mini Demo"));
+  Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
+
+  if (!myDFPlayer.begin(mySoftwareSerial)) {  //Use softwareSerial to communicate with mp3.
+      Serial.println(F("Unable to begin:"));
+      Serial.println(F("1.Please recheck the connection!"));
+      Serial.println(F("2.Please insert the SD card!"));
+      while(true){
+        delay(0); // Code to compatible with ESP8266 watch dog.
+      }
+    }
+  Serial.println(F("DFPlayer Mini online."));
+ 
+
+  myDFPlayer.volume(10);  //Set volume value. From 0 to 30
+   
+// init neopixels
   strip.setBrightness(BRIGHTNESS);
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-  const int turns = 4;
+  const int turns = ROUNDS;
   for (int i = 0; i < NUM_LEDS * turns; i++) {
 
     int c = (i < NUM_LEDS * turns / 2) ?
@@ -122,8 +158,7 @@ void loop() {
     } else if (i > nloops_tf + nloops_tc and counter >= 0) {
       counter = counter - 1;
     }
-    
-    
+     
     int c = map(counter, 0, nloops_tf, 0, 255);
     set_color(c);
     i = i + 1;
@@ -140,6 +175,9 @@ void loop() {
     Serial.print("]\n");
   }
   delay(DLOOP);
+  if (i < 2) {
+    myDFPlayer.play(1);  //Play the first mp3
+  }
 }
 //----------------------------------------------------------
 
