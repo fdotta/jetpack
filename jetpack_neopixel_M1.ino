@@ -6,22 +6,8 @@
 #include "Arduino.h"
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
+#include "config.h"
 
-
-// jetpack setup
-#define PIN 6          // NeoPixel strip data pin
-#define RPIN 5         // Reley pin
-#define NUM_LEDS 48    // neopixel num leds
-#define DLOOP 40       // delay per loop in ms
-#define TFULL 25       // tolal time to full power in seconds  
-#define TCRUIZE 21     // total time in cruise in seconds
-#define TFULLZ  17     // total time full 2 zero in seconds
-#define TSMOKE  7      // total time in seconds smoke on
-#define TSDELAY 1      // delay time to the smoke in seconds
-#define TRSMOKE 2.25   // ratio smoke on/off  
-#define ROUNDS 5       // num of led ronds on start up
-#define BRIGHTNESS 255 // led brightness (0 off, 255 max)
-#define VOLUME 15      // Set volume value. From 0 to 30
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 //Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_GRBW + NEO_KHZ800);
@@ -53,7 +39,6 @@ void setup() {
   pinMode(PIN, OUTPUT);
   pinMode(RPIN, OUTPUT);
   digitalWrite(RPIN, HIGH);
-
   
   Serial.begin(9600);
   Serial.print("DLOOP   = ");
@@ -171,33 +156,33 @@ void loop() {
     set_color(c);
     i = i + 1;
 
-  if (debug) {
-    Serial.print("[i counter c time = [");
-    Serial.print(i);
-    Serial.print(" ");
-    Serial.print(counter);
-    Serial.print(" ");
-    Serial.print(c);
-    Serial.print(" ");
-    Serial.print(float(i)*DLOOP/1000);
-    Serial.print("]\n");
-  }
-
 // DFplayer control 
   if (i < 2) {
     myDFPlayer.play(1);  //Play the first mp3
   }
 
 // Relay control (smoke)
-
-
   if (brdelay) {
-    digitalWrite(RPIN, HIGH);    
+    digitalWrite(RPIN, HIGH);
+   } 
+    
+  if (rcounter >= rdelay) {
+    brdelay = false;
   }
 
-  if (rcounter == rdelay) {
-    brdelay = false;
-    digitalWrite(RPIN, LOW);
+  if (counter == -1) {
+    digitalWrite(RPIN, HIGH);
+  
+  } else {
+    if (rcounter <= ron && not brdelay) {
+      digitalWrite(RPIN, LOW);
+    
+    } else if (rcounter > ron && rcounter <= ron + roff) {
+      digitalWrite(RPIN, HIGH);
+
+    } else if (rcounter > ron + roff) {
+      rcounter = 0;
+    }  
   }
   
   rcounter = rcounter + 1;
