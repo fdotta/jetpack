@@ -16,10 +16,12 @@
 #define TFULL 25       // tolal time to full power in seconds  
 #define TCRUIZE 21     // total time in cruise in seconds
 #define TFULLZ  17     // total time full 2 zero in seconds
-#define TSMOKE  20     // total time in seconds smoke on
-#define TRSMOKE 2      // ratio smoke on/off  
+#define TSMOKE  7      // total time in seconds smoke on
+#define TSDELAY 1      // delay time to the smoke in seconds
+#define TRSMOKE 2.25   // ratio smoke on/off  
 #define ROUNDS 5       // num of led ronds on start up
 #define BRIGHTNESS 255 // led brightness (0 off, 255 max)
+#define VOLUME 15      // Set volume value. From 0 to 30
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 //Adafruit_NeoPixel strip = Adafruit_NeoPixel(16, PIN, NEO_GRBW + NEO_KHZ800);
@@ -32,10 +34,12 @@ int nloops_tc = floor(TCRUIZE * 1000 / DLOOP);
 int nloops_tz = floor(TFULLZ * 1000 / DLOOP);
 int ron       = floor(TSMOKE * 1000 / DLOOP);
 int roff      = floor(ron/(TRSMOKE + 1));
+int rdelay    = floor(TSDELAY * 1000 / DLOOP);
 
 bool debug = false;
 
-int i, counter, rcounter; 
+int i, counter, rcounter;
+bool brdelay;
 
 //----------------------------------------------------------
 
@@ -43,10 +47,13 @@ void setup() {
   i = 0;
   counter  = 0; 
   rcounter = 0;
+  brdelay  = true;
   
   mySoftwareSerial.begin(9600);
   pinMode(PIN, OUTPUT);
   pinMode(RPIN, OUTPUT);
+  digitalWrite(RPIN, HIGH);
+
   
   Serial.begin(9600);
   Serial.print("DLOOP   = ");
@@ -86,7 +93,8 @@ void setup() {
   Serial.println(F("DFPlayer Mini online."));
  
 
-  myDFPlayer.volume(10);  //Set volume value. From 0 to 30
+  myDFPlayer.volume(VOLUME);  //Set volume value. From 0 to 30
+
    
 // init neopixels
   strip.setBrightness(BRIGHTNESS);
@@ -150,6 +158,7 @@ void set_color(int c) {
 //----------------------------------------------------------
 
 void loop() {
+// neopixel control sync with audio
     if (i <= nloops_tf) {
          counter = i;
     } else if (i > nloops_tf and i <= nloops_tf + nloops_tc) {
@@ -173,10 +182,28 @@ void loop() {
     Serial.print(float(i)*DLOOP/1000);
     Serial.print("]\n");
   }
-  delay(DLOOP);
+
+// DFplayer control 
   if (i < 2) {
     myDFPlayer.play(1);  //Play the first mp3
   }
+
+// Relay control (smoke)
+
+
+  if (brdelay) {
+    digitalWrite(RPIN, HIGH);    
+  }
+
+  if (rcounter == rdelay) {
+    brdelay = false;
+    digitalWrite(RPIN, LOW);
+  }
+  
+  rcounter = rcounter + 1;
+  
+  delay(DLOOP);
+ 
 }
 //----------------------------------------------------------
 
