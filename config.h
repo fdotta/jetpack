@@ -11,4 +11,4 @@
 #define TRSMOKE 2      // ratio smoke on/off  
 #define ROUNDS 5       // num of led ronds on start up
 #define BRIGHTNESS 255 // led brightness (0 off, 255 max)
-#define VOLUME 15      // Set volume value. From 0 to 30
+#define VOLUME 30      // Set volume value. From 0 to 30

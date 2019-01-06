@@ -22,8 +22,6 @@ int ron       = floor(TSMOKE * 1000 / DLOOP);
 int roff      = floor(ron/(TRSMOKE + 1));
 int rdelay    = floor(TSDELAY * 1000 / DLOOP);
 
-bool debug = false;
-
 int i, counter, rcounter;
 bool brdelay;
 
@@ -35,37 +33,76 @@ void setup() {
   rcounter = 0;
   brdelay  = true;
   
-  mySoftwareSerial.begin(9600);
   pinMode(PIN, OUTPUT);
   pinMode(RPIN, OUTPUT);
   digitalWrite(RPIN, HIGH);
   
-  Serial.begin(9600);
-  Serial.print("DLOOP   = ");
+  Serial.begin(115200);
+
+  Serial.println(F("jetPack Light and Sound Config"));
+  Serial.println(F("------------------------------"));
+  Serial.print(F("NeoPixel PIN     = "));
+  Serial.println(PIN);
+  Serial.print(F("RELAY PIN        = "));
+  Serial.println(RPIN);
+  Serial.print(F("NLEDS            = "));
+  Serial.println(NUM_LEDS);
+  Serial.print(F("DLOOP            = "));
   Serial.print(DLOOP);
-  Serial.print(" ms\n");
-  Serial.print("TFULL   = ");
+  Serial.println(F(" ms"));
+  Serial.print(F("TFULL            = "));
   Serial.print(TFULL);
-  Serial.print(" s\n");
-  Serial.print("TCRUIZE = ");
+  Serial.println(F(" s"));
+  Serial.print(F("TCRUIZE          = "));
   Serial.print(TCRUIZE);
-  Serial.print(" s\n");
-  Serial.print("TFULLZ  = ");
+  Serial.println(F(" s"));
+  Serial.print(F("TFULLZ           = "));
   Serial.print(TFULLZ);
-  Serial.print(" s\n");
+  Serial.println(F(" s"));
+  Serial.print(F("TSMOKE           = "));
+  Serial.print(TSMOKE);
+  Serial.println(F(" s"));
+  Serial.print(F("TDELAY           = "));
+  Serial.print(TSDELAY);
+  Serial.println(F(" s"));
+  Serial.print(F("Smoke Time       = "));
+  Serial.print(TSMOKE);
+  Serial.println(F(" s"));
+  Serial.print(F("Smoke Time Ratio = "));
+  Serial.println(TRSMOKE);
+  Serial.print(F("NUM RPUNDS       = "));
+  Serial.println(ROUNDS);
+  Serial.print(F("Max BRIGHTNESS   = "));
+  Serial.print(BRIGHTNESS);
+  Serial.println(F(" (0 to 255)"));
+  Serial.print(F("VOLUME           = "));
+  Serial.print(VOLUME);
+  Serial.println(F(" (0 to 30)\n"));
   
-  Serial.print("nloops  = [");
+ 
+  Serial.println(F("Loop Controls"));
+  Serial.println(F("-------------"));
+  Serial.print(F("[nloops_tf, nloops_tc, nloops_z] = ["));
   Serial.print(nloops_tf); 
-  Serial.print(" ");
+  Serial.print(F(", "));
   Serial.print(nloops_tc);
-  Serial.print(" ");
+  Serial.print(F(", "));
   Serial.print(nloops_tz);
-  Serial.print("]\n");
+  Serial.println(F("]"));
+  
+  Serial.print(F("[ron, roff, rdelay]              = ["));
+  Serial.print(ron); 
+  Serial.print(F(", "));
+  Serial.print(roff);
+  Serial.print(F(", "));
+  Serial.print(rdelay);
+  Serial.println(F("]"));
+
 
 // init dfplayer mini
   Serial.println();
-  Serial.println(F("DFRobot DFPlayer Mini Demo"));
-  Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
+  Serial.print(F("Initializing DFPlayer  ... "));
+  mySoftwareSerial.begin(9600);
 
   if (!myDFPlayer.begin(mySoftwareSerial)) {  //Use softwareSerial to communicate with mp3.
       Serial.println(F("Unable to begin:"));
@@ -75,13 +112,13 @@ void setup() {
         delay(0); // Code to compatible with ESP8266 watch dog.
       }
     }
-  Serial.println(F("DFPlayer Mini online."));
  
-
   myDFPlayer.volume(VOLUME);  //Set volume value. From 0 to 30
+  Serial.println(F("online"));
 
-   
 // init neopixels
+  Serial.print(F("Initializing NeoPixels ... "));
+
   strip.setBrightness(BRIGHTNESS);
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
@@ -99,6 +136,9 @@ void setup() {
     strip.setPixelColor(i % NUM_LEDS, 0, 0, 0);
   }
   strip.show();
+  Serial.println(F("online"));
+  Serial.print(F("Initializing Smoke     ... "));
+
 }
 //----------------------------------------------------------
 void set_color(int r, int g, int b) {
@@ -167,11 +207,23 @@ void loop() {
    } 
     
   if (rcounter >= rdelay) {
-    brdelay = false;
+    if (brdelay){
+      brdelay = false;
+      Serial.println(F("online"));   
+    }
+    
   }
 
   if (counter == -1) {
     digitalWrite(RPIN, HIGH);
+    Serial.println();
+    Serial.println(F("NeoPixels              ... offline"));
+    Serial.println(F("DFPlayer               ... offline"));
+    Serial.println(F("Smoke                  ... offline"));
+    Serial.println(F("SYSTEM HALTED!!!"));
+    while(true){
+      delay(0); // Code to compatible with ESP8266 watch dog.
+    }
   
   } else {
     if (rcounter <= ron && not brdelay) {
