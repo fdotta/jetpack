@@ -98,7 +98,6 @@ void setup() {
   Serial.print(rdelay);
   Serial.println(F("]"));
 
-
 // init dfplayer mini
   Serial.println();
   Serial.print(F("Initializing DFPlayer  ... "));
